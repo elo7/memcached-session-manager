@@ -230,6 +230,7 @@ public class MemcachedSessionService {
     private LockingStrategy _lockingStrategy;
     private long _operationTimeout = 1000;
     private int _lockExpiration = 5;
+    private int _maxIdleSwap = -1;
 
     private CurrentRequest _currentRequest;
     private RequestTrackingHostValve _trackingHostValve;
@@ -297,6 +298,7 @@ public class MemcachedSessionService {
         boolean isMaxInactiveIntervalSet();
         int getMaxInactiveInterval();
         void setMaxInactiveInterval(int interval);
+        void setMaxIdleSwap(int interval);
 
         int getMaxActiveSessions();
         void incrementSessionCounter();
@@ -1617,6 +1619,12 @@ public class MemcachedSessionService {
                         _log.info( "Could not update expiration in memcached for session " + session.getId(), e );
                     }
                 }
+                long lastAccessedTime = session.getLastAccessedTime();
+                long idleTimeSeconds = (System.currentTimeMillis() - lastAccessedTime) / 1000;
+                if(_maxIdleSwap > 0 && idleTimeSeconds > _maxIdleSwap && session.getRefCount() == 0) {
+                    session.passivate();
+                    _manager.removeInternal(session, false);
+                }
             }
         }
     }
@@ -1825,6 +1833,10 @@ public class MemcachedSessionService {
      */
     public void setStorageKeyPrefix(final String storageKeyPrefix) {
         _storageKeyPrefix = storageKeyPrefix;
+    }
+
+    public void setMaxIdleSwap(int interval) {
+        this._maxIdleSwap = interval;
     }
 
 }

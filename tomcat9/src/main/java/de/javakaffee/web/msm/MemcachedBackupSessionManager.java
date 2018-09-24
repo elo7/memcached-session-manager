@@ -226,6 +226,10 @@ public class MemcachedBackupSessionManager extends ManagerBase implements Lifecy
                 _maxInactiveInterval);
     }
 
+    public void setMaxIdleSwap(int interval) {
+        _msm.setMaxIdleSwap(interval);
+    }
+
     /**
      * Set the memcached nodes space or comma separated.
      * <p>
